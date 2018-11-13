@@ -1,4 +1,5 @@
-# Image Similarity using Deep Ranking
+# Reference Image Recommendation
+Image Similarity using Deep Ranking
 
 > Mathjax/Latex is heavily used in this README file. Please download [MathJax Plugin for Github](https://chrome.google.com/webstore/detail/mathjax-plugin-for-github/ioemnmodlmafdkllaclgeombjnmnbima) in order to render Mathjax/Latex in Github correctly.
 
@@ -23,11 +24,6 @@ The goal of this project is to get hands-on experience concerning the computer v
 The task of image similarity is retrieve a set of `N` images closest to the query image. One application of this task could involve visual search engine where we provide a query image and want to find an image closest that image in the database.
 
 
-<p align="center">
-<img src="./fig/query-image.png" width="80%">
-</p>
-
-
 ## Dataset
 
 For this project, we will use the [Tiny ImageNet](https://tiny-imagenet.herokuapp.com/) dataset. Tiny ImageNet Challenge is the default course project for Stanford [CS231N](http://cs231n.stanford.edu/). It runs similar to the [ImageNet challenge (ILSVRC)](http://www.image-net.org/challenges/LSVRC/2014/).
@@ -44,11 +40,6 @@ You will design a simplified version of the deep ranking model as discussed in t
 - $p_i$: Input to the $Q$ (Query) network. This image is randomly sampled across any class.
 - $p_i^+$: Input to the $P$ (Positive) network. This image is randomly sampled from the **SAME** class as the query image.
 - $p_i^-$: Input to the $N$ (Negative) network. This image is randomly sample from any class **EXCEPT** the class of $p_i$.
-
-
-<p align="center">
-<img src="./fig/model.png" width="70%">
-</p>
 
 
 The output of each network, denoted by $f(p_i)$, $f(p_i^+)$, $f(p_i^-)$ is the feature embedding of an image. This gets fed to the ranking layer.
@@ -420,21 +411,6 @@ Number of Negative image per Query image:  1
 ../tiny-imagenet-200/train/n01443537/images/n01443537_0.JPEG,../tiny-imagenet-200/train/n01443537/images/n01443537_219.JPEG,../tiny-imagenet-200/train/n02948072/images/n02948072_159.JPEG
 ../tiny-imagenet-200/train/n01443537/images/n01443537_0.JPEG,../tiny-imagenet-200/train/n01443537/images/n01443537_219.JPEG,../tiny-imagenet-200/train/n04099969/images/n04099969_450.JPEG
 ```
-
-### Visualization
-
-#### Training loss and accuracy
-
-<p align="center">
-  <img src="./fig/loss.png" width="80%">
-</p>
-
-
-#### Query results
-
-<p align="center">
-  <img src="./fig/query_result.png" width="80%">
-</p>
 
 
 ## References
