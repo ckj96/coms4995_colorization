@@ -85,27 +85,9 @@ Usage is:
 th colorize.lua <input_image> <output_image> colornet_imagenet.t7
 ```
 
-### Notes
 
-- This is developed on a linux machine running Ubuntu 14.04 during late 2015.
-- The provided code does not use GPU accelerated (trivial to change).
-- Please note that the model is slow on large images (over 512x512 pixels) and may run out of memory. Demo should take around 2 GiB of peak RAM memory, system with 4 GiB or more of RAM is recommended.
-- Provided model and sample code is under a non-commercial creative commons license.
 
-## Citing
 
-If you use this code please cite:
-
-```
- @Article{IizukaSIGGRAPH2016,
-   author = {Satoshi Iizuka and Edgar Simo-Serra and Hiroshi Ishikawa},
-   title = {{Let there be Color!: Joint End-to-end Learning of Global and Local Image Priors for Automatic Image Colorization with Simultaneous Classification}},
-   journal = "ACM Transactions on Graphics (Proc. of SIGGRAPH 2016)",
-   year = 2016,
-   volume = 35,
-   number = 4,
- }
-```
 
 
 
