@@ -1,4 +1,4 @@
-# deep-photo-styletransfer-tf
+# Example-based Colorization
 
 This is a pure Tensorflow implementation of [Deep Photo Styletransfer](https://arxiv.org/abs/1703.07511), the torch implementation could be found [here](https://github.com/luanfujun/deep-photo-styletransfer)
 
@@ -13,8 +13,6 @@ Additionally, there is no dependency on MATLAB thanks to another [repository](ht
     <img src="./examples/readme_examples/intar5.png" width="290"/>
 </p>
 
-## Disclaimer
-**This software is published for academic and non-commercial use only.**
 
 ## Setup
 ### Dependencies
@@ -109,18 +107,4 @@ Here are more results from tensorflow algorithm (from left to right are input, s
 
 * We use [martinbenson](https://github.com/martinbenson)'s [python code](https://github.com/martinbenson/deep-photo-styletransfer/blob/master/deep_photo.py) to compute Matting Laplacian.
 
-## Citation
-If you find this code useful for your research, please cite:
-```
-@misc{YangPhotoStyle2017,
-  author = {Yang Liu},
-  title = {deep-photo-style-transfer-tf},
-  publisher = {GitHub},
-  organization={Alibaba-Zhejiang University Joint Research Institute of Frontier Technologies},
-  year = {2017},
-  howpublished = {\url{https://github.com/LouieYang/deep-photo-styletransfer-tf}}
-}
-```
 
-## Contact
-Feel free to contact me if there is any question (Yang Liu lyng_95@zju.edu.cn).
