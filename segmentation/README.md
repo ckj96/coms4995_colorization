@@ -8,9 +8,6 @@ https://github.com/CSAILVision/sceneparsing
 All pretrained models can be found at:
 http://sceneparsing.csail.mit.edu/model/pytorch
 
-<img src="./teaser/ADE_val_00000278.png" width="900"/>
-<img src="./teaser/ADE_val_00001519.png" width="900"/>
-[From left to right: Test Image, Ground Truth, Predicted Result]
 
 ## Highlights
 
@@ -43,8 +40,6 @@ Encoder: (resnetXX_dilatedYY: customized resnetXX with dilated convolutions, out
 - ResNet50: resnet50_dilated16, resnet50_dilated8
 - ResNet101: resnet101_dilated16, resnet101_dilated8
 
-***Coming soon***:
-- ResNeXt101: resnext101_dilated16, resnext101_dilated8
 
 Decoder:
 - c1_bilinear (1 conv + bilinear upsample)
@@ -227,34 +222,4 @@ usage: eval.py [-h] --id ID [--suffix SUFFIX] [--arch_encoder ARCH_ENCODER]
 ```
 
 
-## Reference
 
-If you find the code or pre-trained models useful, please cite the following papers:
-
-Scene Parsing through ADE20K Dataset. B. Zhou, H. Zhao, X. Puig, S. Fidler, A. Barriuso and A. Torralba. Computer Vision and Pattern Recognition (CVPR), 2017. (http://people.csail.mit.edu/bzhou/publication/scene-parse-camera-ready.pdf)
-
-    @inproceedings{zhou2017scene,
-        title={Scene Parsing through ADE20K Dataset},
-        author={Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio},
-        booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
-        year={2017}
-    }
-    
-Unified Perceptual Parsing for Scene Understanding. T. Xiao, Y. Liu, B. Zhou, Y. Jiang, and J. Sun. European Conference on Computer Vision (ECCV), 2018. (https://arxiv.org/abs/1807.10221)
-
-    @inproceedings{xiao2018unified,
-      title={Unified Perceptual Parsing for Scene Understanding},
-      author={Xiao, Tete and Liu, Yingcheng and Zhou, Bolei and Jiang, Yuning and Sun, Jian},
-      booktitle={European Conference on Computer Vision},
-      year={2018},
-      organization={Springer}
-    }
-    
-Semantic Understanding of Scenes through ADE20K Dataset. B. Zhou, H. Zhao, X. Puig, S. Fidler, A. Barriuso and A. Torralba. arXiv:1608.05442. (https://arxiv.org/pdf/1608.05442.pdf)
-
-    @article{zhou2016semantic,
-      title={Semantic understanding of scenes through the ade20k dataset},
-      author={Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio},
-      journal={arXiv preprint arXiv:1608.05442},
-      year={2016}
-    }
