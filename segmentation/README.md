@@ -221,5 +221,5 @@ usage: eval.py [-h] --id ID [--suffix SUFFIX] [--arch_encoder ARCH_ENCODER]
                [--ckpt CKPT] [--visualize] [--result RESULT] [--gpu_id GPU_ID]
 ```
 
-
-
+## Acknowledgement
+The code credits to Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio
