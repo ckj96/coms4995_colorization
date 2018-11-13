@@ -18,8 +18,6 @@ framework. Our approach can then be used on images of any resolution. By
 incorporating global features we are able to obtain realistic colorings with
 our model.
 
-See our [project page](http://hi.cs.waseda.ac.jp/~iizuka/projects/colorization/) for more detailed information.
-
 ## License
 
 ```
