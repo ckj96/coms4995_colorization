@@ -85,6 +85,9 @@ Usage is:
 th colorize.lua <input_image> <output_image> colornet_imagenet.t7
 ```
 
+## Acknowledgement
+The model credits to Yang Liu, Alibaba-Zhejiang University Joint Research Institute of Frontier Technologies
+
 
 
 
