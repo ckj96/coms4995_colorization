@@ -1,8 +1,6 @@
-# [Let there be Color!: Automatic Colorization of Grayscale Images](http://hi.cs.waseda.ac.jp/~iizuka/projects/colorization/)
+# End-to-End Fully Automatic Colorization
+The model is based on [Let there be Color!: Automatic Colorization of Grayscale Images](http://hi.cs.waseda.ac.jp/~iizuka/projects/colorization/)
 
-[Satoshi Iizuka](http://hi.cs.waseda.ac.jp/~iizuka/index_eng.html)\*, [Edgar Simo-Serra](http://hi.cs.waseda.ac.jp/~esimo/)\*, [Hiroshi Ishikawa](http://www.f.waseda.jp/hfs/indexE.html) (\* equal contribution)
-
-![Teaser Image](https://raw.githubusercontent.com/satoshiiizuka/siggraph2016_colorization/master/example_results.png)
 
 ## Overview
 
