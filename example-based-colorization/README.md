@@ -49,51 +49,6 @@ Run `python deep_photostyle.py --help` to see a list of all options
 This repository doesn't offer image segmentation script and simply use the segmentation image from the [torch version](https://github.com/luanfujun/deep-photo-styletransfer). The mask colors used are also the same as them. You could specify your own segmentation model and mask color to customize your own style transfer.
 
 
-## Examples
-Here are more results from tensorflow algorithm (from left to right are input, style, torch results and tensorflow results)
-
-<p align="center">
-    <img src='examples/input/in6.png' height='140' width='210'/>
-    <img src='examples/style/tar6.png' height='140' width='210'/>
-    <img src='examples/final_results/best6_t_1000.png' height='140' width='210'/>
-    <img src='some_results/best6.png' height='140' width='210'/>
-</p>
-
-<p align="center">
-    <img src='examples/input/in7.png' height='140' width='210'/>
-    <img src='examples/style/tar7.png' height='140' width='210'/>
-    <img src='examples/final_results/best7_t_1000.png' height='140' width='210'/>
-    <img src='some_results/best7.png' height='140' width='210'/>
-</p>
-
-<p align="center">
-    <img src='examples/input/in8.png' height='140' width='210'/>
-    <img src='examples/style/tar8.png' height='140' width='210'/>
-    <img src='examples/final_results/best8_t_1000.png' height='140' width='210'/>
-    <img src='some_results/best8.png' height='140' width='210'/>
-</p>
-
-<p align="center">
-    <img src='examples/input/in9.png' height='140' width='210'/>
-    <img src='examples/style/tar9.png' height='140' width='210'/>
-    <img src='examples/final_results/best9_t_1000.png' height='140' width='210'/>
-    <img src='some_results/best9.png' height='140' width='210'/>
-</p>
-
-<p align="center">
-    <img src='examples/input/in10.png' height='140' width='210'/>
-    <img src='examples/style/tar10.png' height='140' width='210'/>
-    <img src='examples/final_results/best10_t_1000.png' height='140' width='210'/>
-    <img src='some_results/best10.png' height='140' width='210'/>
-</p>
-
-<p align="center">
-    <img src='examples/input/in11.png' width='210'/>
-    <img src='examples/style/tar11.png' width='210'/>
-    <img src='examples/final_results/best11_t_1000.png' width='210'/>
-    <img src='some_results/best11.png' width='210'/>
-</p>
-
 ## Acknowledgement
 
 * This work was done when Yang Liu was a research intern at *Alibaba-Zhejiang University Joint Research Institute of Frontier Technologies*, under the supervision of [Prof. Mingli Song](http://person.zju.edu.cn/en/msong) and [Yongcheng Jing](http://yongchengjing.com/).
