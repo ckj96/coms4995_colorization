@@ -1,0 +1,24 @@
+==> Building new TripletNet model ...
+==> Initialize CUDA support for TripletNet model ...
+==> Preparing Tiny ImageNet dataset ...
+==> Start training ...
+Training Epoch: 1 | Loss: 0.917316001142439
+Training Epoch: 2 | Loss: 0.6702667915639532
+Training Epoch: 3 | Loss: 0.573900251481207
+Training Epoch: 4 | Loss: 0.3704779542584129
+Training Epoch: 5 | Loss: 0.25893549185344295
+Training Epoch: 6 | Loss: 0.22715897708377936
+Training Epoch: 7 | Loss: 0.1774170891864568
+Training Epoch: 8 | Loss: 0.15784282175344216
+Training Epoch: 9 | Loss: 0.13782430676001808
+Training Epoch: 10 | Loss: 0.129641326097655
+Training Epoch: 11 | Loss: 0.11205299051465227
+Training Epoch: 12 | Loss: 0.10114530638195285
+Training Epoch: 13 | Loss: 0.08951557223380185
+Training Epoch: 14 | Loss: 0.08683383552307714
+Training Epoch: 15 | Loss: 0.07106954848704294
+Training Epoch: 16 | Loss: 0.0577262706759176
+Training Epoch: 17 | Loss: 0.04879258244553201
+Training Epoch: 18 | Loss: 0.04145878943979536
+Training Epoch: 19 | Loss: 0.04419795630328856
+Training Epoch: 20 | Loss: 0.03968841027009695
