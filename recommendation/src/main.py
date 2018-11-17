@@ -27,7 +27,7 @@ parser.add_argument('--dataroot', type=str, default="",
                     help='train/val data root')
 
 # hyperparameters settings
-parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
 parser.add_argument('--momentum', type=float,
                     default=0.9, help='momentum factor')
 parser.add_argument('--nesterov', type=bool, default=True,
@@ -60,7 +60,7 @@ args = parser.parse_args()
 
 def main():
     """Main pipeline of Image Similarity using Deep Ranking."""
-    net = TripletNet(resnet101())
+    net = TripletNet(resnet101(True))
 
     # For training on GPU, we need to transfer net and data onto the GPU
     # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
@@ -79,10 +79,6 @@ def main():
         print("==> Loaded checkpoint '{}' (epoch {})".format(
             args.ckptroot, checkpoint['epoch']))
 
-    else:
-        # start over
-        print('==> Building new TripletNet model ...')
-        net = TripletNet(resnet101()).cuda()
 
     # Loss function, optimizer and scheduler
     criterion = nn.TripletMarginLoss(margin=args.g, p=args.p)

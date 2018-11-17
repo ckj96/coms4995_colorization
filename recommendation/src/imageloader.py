@@ -62,12 +62,15 @@ class TripletImageLoader(Dataset):
         # load test data
         else:
             singletons = []
+            """
             test_images = os.listdir(os.path.join(
                 "../tiny-imagenet-200", "val", "images"))
             for test_image in test_images:
                 loaded_image = self.loader(os.path.join(
                     "../tiny-imagenet-200", "val", "images", test_image))
                 singletons.append(loaded_image)
+            """
+
             self.singletons = singletons
 
     def __getitem__(self, index):
@@ -75,9 +78,12 @@ class TripletImageLoader(Dataset):
         # get trainig triplets
         if self.train_flag:
             path1, path2, path3 = self.triplets[index]
-            a = self.loader(os.path.join(self.base_path, path1))
-            p = self.loader(os.path.join(self.base_path, path2))
-            n = self.loader(os.path.join(self.base_path, path3))
+            # a = self.loader(os.path.join(self.base_path, path1))
+            # p = self.loader(os.path.join(self.base_path, path2))
+            # n = self.loader(os.path.join(self.base_path, path3))
+            a = self.loader(path1)
+            p = self.loader(path2)
+            n = self.loader(path3)
             if self.transform is not None:
                 a = self.transform(a)
                 p = self.transform(p)

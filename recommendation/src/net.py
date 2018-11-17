@@ -46,11 +46,14 @@ def resnet101(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = torchvision.models.resnet.ResNet(
-        torchvision.models.resnet.BasicBlock, [3, 4, 23, 3])
+
     if pretrained:
-        model.load_state_dict(torch.utils.model_zoo.load_url(
-            model_urls['resnet101'], model_dir='../resnet101'))
+        # model.load_state_dict(torch.utils.model_zoo.load_url(
+        #     model_urls['resnet101'], model_dir='../resnet101'))
+        model = models.resnet101(pretrained=True)
+    else:
+        model = torchvision.models.resnet.ResNet(
+            torchvision.models.resnet.BasicBlock, [3, 4, 23, 3])
     return EmbeddingNet(model)
 
 
