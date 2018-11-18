@@ -50,6 +50,7 @@ def resnet101(pretrained=False, **kwargs):
     if pretrained:
         # model.load_state_dict(torch.utils.model_zoo.load_url(
         #     model_urls['resnet101'], model_dir='../resnet101'))
+        print('use pretrained data')
         model = models.resnet101(pretrained=True)
     else:
         model = torchvision.models.resnet.ResNet(
@@ -64,6 +65,8 @@ class TripletNet(nn.Module):
         """Triplet Network Builder."""
         super(TripletNet, self).__init__()
         self.embeddingnet = embeddingnet
+        self.fc2 = nn.Linear(4096, 201)
+        self.sm = nn.Softmax()
 
     def forward(self, a, p, n):
         """Forward pass."""
@@ -76,7 +79,10 @@ class TripletNet(nn.Module):
         # negative examples
         embedded_n = self.embeddingnet(n)
 
-        return embedded_a, embedded_p, embedded_n
+        cat_a = self.sm(self.fc2(embedded_a))
+        cat_p = self.sm(self.fc2(embedded_p))
+        cat_n = self.sm(self.fc2(embedded_n))
+        return embedded_a, embedded_p, embedded_n, cat_a, cat_p, cat_n
 
 
 class EmbeddingNet(nn.Module):
@@ -87,12 +93,15 @@ class EmbeddingNet(nn.Module):
         super(EmbeddingNet, self).__init__()
 
         # Everything except the last linear layer
+        # print(list(resnet.children()))
         self.features = nn.Sequential(*list(resnet.children())[:-1])
         num_ftrs = resnet.fc.in_features
+        print('num_features:', num_ftrs)
         self.fc1 = nn.Linear(num_ftrs, 4096)
 
     def forward(self, x):
         """Forward pass of EmbeddingNet."""
+
         out = self.features(x)
         out = out.view(out.size(0), -1)
         out = self.fc1(out)

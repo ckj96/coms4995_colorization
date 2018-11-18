@@ -57,6 +57,7 @@ class Sampler(object):
                 cnt += 1
 
         self.num_cat = self.cul_len[-1]
+        print('sum_catorgory:', self.cul_len)
         self.triplets = []
 
     def get_dir(self, num):
@@ -85,9 +86,9 @@ class Sampler(object):
         return imgs
 
     def generate_neg(self, dir2):
-        neg_imgs = set()
+        neg_imgs = list()
         i = 0
-
+        nums = set()
         while i < self.neg_num:
             while True:
                 num = self.random_num(self.cul_len[-1])
@@ -97,19 +98,23 @@ class Sampler(object):
 
             imgs = self.get_images(dir_neg)
             index_img = self.random_num(len(imgs))
-            if imgs[index_img] not in neg_imgs:
-                neg_imgs.add(imgs[index_img])
-                i += 1
-        return list(neg_imgs)
 
-    def dict2str(self, query_img, pos_dict, pos_root):
+            if num not in nums:
+                nums.add(num)
+                neg_imgs.append((imgs[index_img], num))
+                i += 1
+        return neg_imgs
+
+    def dict2str(self, query_img, pos_dict, pos_root, query_index):
+        query_index = str(query_index)
         for (pos, negs) in pos_dict.items():
-            for neg in negs:
-                triplet = query_img + ',' + os.path.join(pos_root, pos) + ',' + neg + '\n'
+            for (neg, neg_num) in negs:
+                triplet = query_img + ',' + os.path.join(pos_root, pos) + ',' + neg + ',' + query_index + \
+                            ',' + query_index + ',' + str(neg_num) + '\n'
                 self.triplets.append(triplet)
 
     # note: dir2 is absolute path, r
-    def generate_triplets_in_cat(self, query_imgs_path, dir2):
+    def generate_triplets_in_cat(self, query_imgs_path, dir2, query_index):
 
         images = self.get_images(dir2)
         for query_img_path in query_imgs_path:
@@ -123,7 +128,7 @@ class Sampler(object):
                         neg_imgs = self.generate_neg(dir2)
                         pos_images_dict[img] = neg_imgs
                         break
-            self.dict2str(query_img_path, pos_images_dict, dir2)
+            self.dict2str(query_img_path, pos_images_dict, dir2, query_index )
 
     def generate_triplets(self, num):
         num_each_cat = num // self.num_cat
@@ -131,13 +136,16 @@ class Sampler(object):
             directory = self.get_dir(dir_index)
             print(directory)
             query_imgs_path = self.get_random_sample(directory, num_each_cat)
-            self.generate_triplets_in_cat(query_imgs_path, directory)
+            self.generate_triplets_in_cat(query_imgs_path, directory, dir_index)
             print(len(self.triplets))
+
+        random.shuffle(self.triplets)
 
     def write(self):
         print("==> Sampling Done ... Now Writing ...")
         print(len(self.triplets))
         f = open(os.path.join(self.output_dir, "triplets.txt"), 'w')
+
         for triplet in self.triplets:
             f.write(triplet)
         f.close()

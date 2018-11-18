@@ -56,7 +56,8 @@ class TripletImageLoader(Dataset):
             triplets = []
             for line in open(triplets_filename):
                 line_array = line.split(",")
-                triplets.append((line_array[0], line_array[1], line_array[2]))
+                triplets.append((line_array[0], line_array[1], line_array[2], int(line_array[3]), int(line_array[4]),
+                                 int(line_array[5])))
             self.triplets = triplets
 
         # load test data
@@ -77,7 +78,7 @@ class TripletImageLoader(Dataset):
         """Get triplets in dataset."""
         # get trainig triplets
         if self.train_flag:
-            path1, path2, path3 = self.triplets[index]
+            path1, path2, path3, la, lp, ln = self.triplets[index]
             # a = self.loader(os.path.join(self.base_path, path1))
             # p = self.loader(os.path.join(self.base_path, path2))
             # n = self.loader(os.path.join(self.base_path, path3))
@@ -88,7 +89,8 @@ class TripletImageLoader(Dataset):
                 a = self.transform(a)
                 p = self.transform(p)
                 n = self.transform(n)
-            return a, p, n
+
+            return a, p, n, la, lp, ln
 
         # get test image
         else:
