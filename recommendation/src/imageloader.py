@@ -63,7 +63,6 @@ class TripletImageLoader(Dataset):
                 for img_name in image_list:
                     singletons.append(os.path.join(base_dir, img_name))
 
-                print(singletons)
             """
             test_images = os.listdir(os.path.join(
                 "../tiny-imagenet-200", "val", "images"))

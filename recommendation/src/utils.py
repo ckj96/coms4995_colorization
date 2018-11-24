@@ -248,8 +248,8 @@ def test(net, is_gpu):
             neigh = pickle.load(f)
             pred_img = neigh.predict(embedded_test_numpy)
 
-            print(pred_img)
-            print(test_images[test_id])
+            print('predict image', pred_img)
+            print('test image', test_images[test_id])
 
 
 def save_kd_tree(embedded_features, output_path, img_list):
@@ -265,8 +265,8 @@ def save_kd_tree(embedded_features, output_path, img_list):
     pickle.dump(neigh, f)
 
 
-def save_embedded_txt(is_gpu):
-    net = TripletNet(resnet50(True))
+def save_embedded_txt(net, is_gpu):
+
 
     # For training on GPU, we need to transfer net and data onto the GPU
     # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
@@ -275,11 +275,6 @@ def save_embedded_txt(is_gpu):
         cudnn.benchmark = True
     path_root = "/home/cc4192/data/data/vision/torralba/deeplearning/images256/"
 
-    print('==> Retrieve model parameters ...')
-    checkpoint = torch.load("../checkpoint/checkpoint.pth.tar")
-    # start_epoch = checkpoint['epoch']
-    # best_prec1 = checkpoint['best_prec1']
-    net.load_state_dict(checkpoint['state_dict'])
     net.eval()
     for direc in os.listdir(path_root):
         dir_path1 = os.path.join(path_root, direc)
@@ -287,15 +282,15 @@ def save_embedded_txt(is_gpu):
             continue
         for dir2 in os.listdir(dir_path1):
             dir_path2 = os.path.join(dir_path1, dir2)
-            print(dir_path2)
+            print('processing:', dir_path2)
             if not os.path.isdir(dir_path2):
                 continue
-            txt_path = os.path.join(dir_path2, 'embedded_features_train.txt')
+
             embedded_list = None
 
             cnt = 0
             img_list = list_pictures(dir_path2)
-            testloader = ImageLoader(batch_size=16, train_flag=False, img_list=img_list)
+            testloader = ImageLoader(batch_size=32, train_flag=False, img_list=img_list)
             flag = True
             for _, data1 in enumerate(testloader):
                 if is_gpu:
@@ -329,7 +324,9 @@ def load_model(resume):
         # checkpoint = torch.load()
         checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
         state_dict = {str.replace(k, 'module.', ''): v for k, v in checkpoint['state_dict'].items()}
-
+        if 'embeddingnet.fc1.bias' in state_dict:
+            del state_dict['embeddingnet.fc1.bias']
+            del state_dict['embeddingnet.fc1.weight']
         net.load_state_dict(state_dict)
 
     return net
@@ -348,12 +345,12 @@ if __name__ == '__main__':
     parser.add_argument('--function', type=str, default='test')
     args = parser.parse_args()
 
-    # net = load_model(False)
+    net = load_model(True)
     if args.function == 'test':
         # test(net, True)
-        net = load_model(True)
+        # net = load_model(True)
         test(net, True)
     elif args.function == 'savekd':
-        save_embedded_txt(True)
+        save_embedded_txt(net, True)
     else:
         print('function not exist')
