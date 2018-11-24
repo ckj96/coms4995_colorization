@@ -255,7 +255,7 @@ def test(net, is_gpu):
 def save_kd_tree(embedded_features, output_path, img_list):
 
     neigh = KNeighborsClassifier(
-        n_neighbors=1, weights='distance', algorithm='kd_tree', n_jobs=-1)
+        n_neighbors=100, weights='distance', algorithm='kd_tree', n_jobs=-1)
     reshape_feature = embedded_features.reshape(-1, 2048)
     # print(reshape_feature.shape)
     neigh.fit(reshape_feature,
@@ -280,7 +280,7 @@ def save_embedded_txt(is_gpu):
     # start_epoch = checkpoint['epoch']
     # best_prec1 = checkpoint['best_prec1']
     net.load_state_dict(checkpoint['state_dict'])
-
+    net.eval()
     for direc in os.listdir(path_root):
         dir_path1 = os.path.join(path_root, direc)
         if not os.path.isdir(dir_path1):
