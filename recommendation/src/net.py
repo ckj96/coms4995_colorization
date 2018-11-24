@@ -24,6 +24,11 @@ model_urls = {
 }
 
 
+def freeze_layer(layer):
+    for param in layer.parameters():
+        param.requires_grad = False
+
+
 def resnet18(model_urls, pretrained=True):
     """
     Construct a ResNet-18 model.
@@ -58,6 +63,19 @@ def resnet101(pretrained=False, **kwargs):
     return EmbeddingNet(model)
 
 
+def resnet50(pretrained=True, **kwargs):
+    if pretrained:
+        model = models.resnet50(num_classes=365)
+        model_file = '../checkpoint/res50.pth.tar'
+        checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
+        state_dict = {str.replace(k, 'module.', ''): v for k, v in checkpoint['state_dict'].items()}
+        model.load_state_dict(state_dict)
+    else:
+        model = models.resnet50()
+
+    return EmbeddingNet(model)
+
+
 class TripletNet(nn.Module):
     """Triplet Network."""
 
@@ -65,7 +83,7 @@ class TripletNet(nn.Module):
         """Triplet Network Builder."""
         super(TripletNet, self).__init__()
         self.embeddingnet = embeddingnet
-        self.fc2 = nn.Linear(4096, 201)
+        self.fc2 = nn.Linear(2048, 201)
         self.sm = nn.Softmax()
 
     def forward(self, a, p, n):
@@ -88,22 +106,25 @@ class TripletNet(nn.Module):
 class EmbeddingNet(nn.Module):
     """EmbeddingNet using ResNet-101."""
 
-    def __init__(self, resnet):
+    def __init__(self, resnet, freeze=False):
         """Initialize EmbeddingNet model."""
         super(EmbeddingNet, self).__init__()
 
         # Everything except the last linear layer
         # print(list(resnet.children()))
+        if freeze:
+            for child in resnet.children():
+                freeze_layer(child)
         self.features = nn.Sequential(*list(resnet.children())[:-1])
         num_ftrs = resnet.fc.in_features
         print('num_features:', num_ftrs)
-        self.fc1 = nn.Linear(num_ftrs, 4096)
+        # self.fc1 = nn.Linear(num_ftrs, 4096)
 
     def forward(self, x):
         """Forward pass of EmbeddingNet."""
 
         out = self.features(x)
         out = out.view(out.size(0), -1)
-        out = self.fc1(out)
+        # out = self.fc1(out)
 
         return out

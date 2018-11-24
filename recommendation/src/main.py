@@ -13,54 +13,16 @@ import torch.backends.cudnn as cudnn
 
 import argparse
 
-from utils import TinyImageNetLoader, train
+from utils import ImageLoader, train
 from net import *
 
 
-# Instantiate the parser
-parser = argparse.ArgumentParser()
-
-# directory
-parser.add_argument('--ckptroot', type=str,
-                    default="../checkpoint", help='path to checkpoint')
-parser.add_argument('--dataroot', type=str, default="",
-                    help='train/val data root')
-
-# hyperparameters settings
-parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
-parser.add_argument('--momentum', type=float,
-                    default=0.9, help='momentum factor')
-parser.add_argument('--nesterov', type=bool, default=True,
-                    help='enables Nesterov momentum')
-parser.add_argument('--weight_decay', type=float,
-                    default=1e-5, help='weight decay (L2 penalty)')
-parser.add_argument('--epochs', type=int, default=50,
-                    help='number of epochs to train')
-parser.add_argument('--batch_size_train', type=int,
-                    default=30, help='training set input batch size')
-parser.add_argument('--batch_size_test', type=int,
-                    default=30, help='test set input batch size')
-parser.add_argument('--start_epoch', type=int,
-                    default=0, help='starting epoch')
-
-# loss function settings
-parser.add_argument('--g', type=float, default=1.0, help='gap parameter')
-parser.add_argument('--p', type=int, default=2,
-                    help='norm degree for pairwise distance - Euclidean Distance')
-
-# training settings
-parser.add_argument('--resume', type=bool, default=False,
-                    help='whether re-training from ckpt')
-parser.add_argument('--is_gpu', type=bool, default=True,
-                    help='whether training using GPU')
-
-# parse the arguments
-args = parser.parse_args()
 
 
 def main():
+
     """Main pipeline of Image Similarity using Deep Ranking."""
-    net = TripletNet(resnet101(True))
+    net = TripletNet(resnet50(True))
 
     # For training on GPU, we need to transfer net and data onto the GPU
     # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
@@ -82,11 +44,12 @@ def main():
 
     # Loss function, optimizer and scheduler
     criterion = nn.TripletMarginLoss(margin=args.g, p=args.p)
-    optimizer = torch.optim.SGD(net.parameters(),
-                                lr=args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay,
-                                nesterov=args.nesterov)
+    # optimizer = torch.optim.SGD(net.parameters(),
+    #                             lr=args.lr,
+    #                             momentum=args.momentum,
+    #                             weight_decay=args.weight_decay,
+    #                             nesterov=args.nesterov)
+    optimizer = torch.optim.Adam(net.parameters())
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                            mode='min',
                                                            factor=0.1,
@@ -94,14 +57,52 @@ def main():
                                                            verbose=True)
 
     # load triplet dataset
-    trainloader, testloader = TinyImageNetLoader(args.dataroot,
-                                                 args.batch_size_train,
-                                                 args.batch_size_test)
+    trainloader = ImageLoader(batch_size=args.batch_size_train, triplets_name='../triplets.txt', train_flag=True)
 
     # train model
     train(net, criterion, optimizer, scheduler, trainloader,
-          testloader, args.start_epoch, args.epochs, args.is_gpu)
+           args.start_epoch, args.epochs, args.is_gpu, batch_size=args.batch_size_train)
 
 
 if __name__ == '__main__':
+    # Instantiate the parser
+    parser = argparse.ArgumentParser()
+
+    # directory
+    parser.add_argument('--ckptroot', type=str,
+                        default="../checkpoint", help='path to checkpoint')
+    parser.add_argument('--dataroot', type=str, default="",
+                        help='train/val data root')
+
+    # hyperparameters settings
+    parser.add_argument('--lr', type=float, default=0.005, help='learning rate')
+    parser.add_argument('--momentum', type=float,
+                        default=0.9, help='momentum factor')
+    parser.add_argument('--nesterov', type=bool, default=True,
+                        help='enables Nesterov momentum')
+    parser.add_argument('--weight_decay', type=float,
+                        default=1e-5, help='weight decay (L2 penalty)')
+    parser.add_argument('--epochs', type=int, default=50,
+                        help='number of epochs to train')
+    parser.add_argument('--batch_size_train', type=int,
+                        default=30, help='training set input batch size')
+    parser.add_argument('--batch_size_test', type=int,
+                        default=30, help='test set input batch size')
+    parser.add_argument('--start_epoch', type=int,
+                        default=0, help='starting epoch')
+
+    # loss function settings
+    parser.add_argument('--g', type=float, default=1.0, help='gap parameter')
+    parser.add_argument('--p', type=int, default=2,
+                        help='norm degree for pairwise distance - Euclidean Distance')
+
+    # training settings
+    parser.add_argument('--resume', type=bool, default=False,
+                        help='whether re-training from ckpt')
+    parser.add_argument('--is_gpu', type=bool, default=True,
+                        help='whether training using GPU')
+
+    # parse the arguments
+    args = parser.parse_args()
+
     main()

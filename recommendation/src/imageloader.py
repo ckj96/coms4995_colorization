@@ -25,8 +25,8 @@ def image_loader(path):
 class TripletImageLoader(Dataset):
     """Image Loader for Tiny ImageNet."""
 
-    def __init__(self, base_path, triplets_filename, transform=None,
-                 train=True, loader=image_loader, path=None):
+    def __init__(self, triplets_filename, transform=None,
+                 train=True, loader=image_loader, image_list=None, base_dir=None):
         """
         Image Loader Builder.
 
@@ -37,22 +37,13 @@ class TripletImageLoader(Dataset):
             transform: torchvision.transforms
             loader: loader for each image
         """
-        self.base_path = base_path
         self.transform = transform
         self.loader = loader
-
+        self.labeled = True
         self.train_flag = train
 
         # load training data
-        if path:
-            singletons = []
-            test_images = os.listdir(path)
-            for test_image in test_images:
-                loaded_image = self.loader(os.path.join(path, test_image))
-                singletons.append(loaded_image)
-            self.singletons = singletons
-
-        elif self.train_flag:
+        if self.train_flag:
             triplets = []
             for line in open(triplets_filename):
                 line_array = line.split(",")
@@ -63,6 +54,16 @@ class TripletImageLoader(Dataset):
         # load test data
         else:
             singletons = []
+            if not image_list:
+                for line in open(triplets_filename):
+                    line_array = line.split(",")
+                    singletons.append((line_array[0], line_array[1]))
+            else:
+                self.labeled = False
+                for img_name in image_list:
+                    singletons.append(os.path.join(base_dir, img_name))
+
+                print(singletons)
             """
             test_images = os.listdir(os.path.join(
                 "../tiny-imagenet-200", "val", "images"))
@@ -94,10 +95,18 @@ class TripletImageLoader(Dataset):
 
         # get test image
         else:
-            img = self.singletons[index]
-            if self.transform is not None:
-                img = self.transform(img)
-            return img
+            if self.labeled:
+                img_path, label = self.singletons[index]
+                img = self.loader(img_path)
+                if self.transform is not None:
+                    img = self.transform(img)
+                return img, label
+            else:
+                img_path = self.singletons[index]
+                img = self.loader(img_path)
+                if self.transform is not None:
+                    img = self.transform(img)
+                return img
 
     def __len__(self):
         """Get the length of dataset."""

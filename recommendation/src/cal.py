@@ -8,6 +8,7 @@ for directory in dir1:
     if os.path.isdir(dir_path):
 
         print(directory, len(os.listdir(dir_path)))
+        print(os.listdir(dir_path))
         cnt_cat += 1
         cnt_num += len(os.listdir(dir_path))
 print(cnt_cat, cnt_num)

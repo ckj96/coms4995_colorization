@@ -29,7 +29,7 @@ def list_pictures(directory, ext='jpg'):
 
 class Sampler(object):
 
-    def __init__(self, root_dir, pos_num, neg_num, output_dir):
+    def __init__(self, root_dir="/home/cc4192/data/data/vision/torralba/deeplearning/images256/", pos_num=1, neg_num=1, output_dir='.'):
         self.root_dir = root_dir
         self.dir_lev1 = os.listdir(root_dir)
         self.dir_lev2 = []
@@ -38,7 +38,9 @@ class Sampler(object):
         self.output_dir = output_dir
 
         for directory in self.dir_lev1:
-            self.dir_lev2.append(os.listdir(os.path.join(root_dir, directory)))
+            path = os.path.join(root_dir, directory)
+            if os.path.isdir(path):
+                self.dir_lev2.append(os.listdir(path))
 
         # save the length of directory
         self.dict_dir = dict()
@@ -150,6 +152,8 @@ class Sampler(object):
             f.write(triplet)
         f.close()
 
+    def sample_test(self):
+        pass
 
 def main():
     """Triplet Sampling."""

@@ -5,7 +5,7 @@ references: https://static.googleusercontent.com/media/research.google.com/en//p
 
 @author: Zhenye Na
 """
-
+import pickle
 import os
 import sys
 import shutil
@@ -22,58 +22,61 @@ from numpy import linalg as LA
 from torch.autograd import Variable
 from sklearn.neighbors import KNeighborsClassifier
 from imageloader import TripletImageLoader
+from sample_place import list_pictures
+from sample_place import Sampler
 import scipy.misc
 
-def TinyImageNetLoader(root, batch_size_train, batch_size_test):
+
+def ImageLoader(batch_size, triplets_name='../triplets.txt', train_flag=True, img_list=None, base_dir=None):
     """
     Tiny ImageNet Loader.
 
     Args:
-        train_root:
-        test_root:
-        batch_size_train:
-        batch_size_test:
+        root:
+        batch_size:
+        triplets_name:
+        train_flag:
 
     Return:
-        trainloader:
-        testloader:
+        loader
     """
-    # Normalize training set together with augmentation
-    transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-                             0.229, 0.224, 0.225])
-    ])
+    if train_flag:
+        # Normalize training set together with augmentation
+        transform_train = transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
+                                 0.229, 0.224, 0.225])
+        ])
 
-    # Normalize test set same as training set without augmentation
-    transform_test = transforms.Compose([
-        transforms.Resize(224),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-                             0.229, 0.224, 0.225])
-    ])
+        # Loading Tiny ImageNet dataset
+        print("==> Preparing Tiny ImageNet dataset ...")
 
-    # Loading Tiny ImageNet dataset
-    print("==> Preparing Tiny ImageNet dataset ...")
+        trainset = TripletImageLoader(
+             triplets_filename=triplets_name, transform=transform_train)
+        loader = torch.utils.data.DataLoader(
+            trainset, batch_size=batch_size, num_workers=32)
 
-    trainset = TripletImageLoader(
-        base_path=root, triplets_filename="../triplets.txt", transform=transform_train)
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size_train, num_workers=32)
+    else:
+        # Normalize test set same as training set without augmentation
+        transform_test = transforms.Compose([
+            transforms.Resize(224),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
+                0.229, 0.224, 0.225])
+        ])
+        testset = TripletImageLoader(
+            triplets_filename="", transform=transform_test, train=False, image_list=img_list, base_dir=base_dir)
+        loader = torch.utils.data.DataLoader(
+            testset, batch_size=batch_size, num_workers=32)
 
-    testset = TripletImageLoader(
-        base_path=root, triplets_filename="", transform=transform_test, train=False)
-    testloader = torch.utils.data.DataLoader(
-        testset, batch_size=batch_size_test, num_workers=32)
-
-    return trainloader, testloader
+    return loader
 
 
 def cal_loss(input, tar):
-    loss_cat = nn.CrossEntropyLoss()
+    loss_cat = nn.CrossEntropyLoss().cuda()
     output = loss_cat(input, tar)
     return output
 
@@ -84,7 +87,7 @@ def get_predict(prob):
 
 
 def train(net, criterion, optimizer, scheduler, trainloader,
-          testloader, start_epoch, epochs, is_gpu, batch_size=16):
+          start_epoch, epochs, is_gpu, batch_size=16):
     """
     Training process.
     Args:
@@ -99,12 +102,16 @@ def train(net, criterion, optimizer, scheduler, trainloader,
         is_gpu: whether use GPU
     """
     print("==> Start training ...")
-    alpha = 1
+    alpha = 0.99
     net.train()
+    show_freq = 30
     for epoch in range(start_epoch, epochs + start_epoch):
 
         running_loss = 0.0
         acc = 0
+        loss_sum = 0
+        loss_sum_t = 0
+        loss_sum_c = 0
         for batch_idx, (data1, data2, data3, label_a, label_p, label_n) in enumerate(trainloader):
 
             if is_gpu:
@@ -116,7 +123,7 @@ def train(net, criterion, optimizer, scheduler, trainloader,
 
             # compute output and loss
             embedded_a, embedded_p, embedded_n, cat_a, cat_p, cat_n = net(data1, data2, data3)
-            loss = alpha * criterion(embedded_a, embedded_p, embedded_n)
+            loss_t = criterion(embedded_a, embedded_p, embedded_n)
 
             pre_a = get_predict(cat_a)
             pre_p = get_predict(cat_p)
@@ -126,7 +133,7 @@ def train(net, criterion, optimizer, scheduler, trainloader,
             label_p = label_p.cuda()
             label_n = label_n.cuda()
 
-            # print(pre_a, label_a)
+
             # print((pre_a == label_a).float())
             # print((pre_a == label_a).float().sum())
             # print((pre_a == label_a).float().sum().data[0])
@@ -135,9 +142,11 @@ def train(net, criterion, optimizer, scheduler, trainloader,
             acc += (pre_p == label_p).float().sum().data[0]
             acc += (pre_n == label_n).float().sum().data[0]
 
-            loss += cal_loss(cat_a, label_a)
-            loss += cal_loss(cat_p, label_p)
-            loss += cal_loss(cat_n, label_n)
+            loss_c = cal_loss(cat_a, label_a)
+            loss_c += cal_loss(cat_p, label_p)
+            loss_c += cal_loss(cat_n, label_n)
+
+            loss = loss_t * alpha + loss_c * (1 - alpha)
 
             # compute gradient and do optimizer step
             optimizer.zero_grad()
@@ -148,10 +157,21 @@ def train(net, criterion, optimizer, scheduler, trainloader,
             # print statistics
             running_loss += loss.data[0]
 
+            loss_sum += loss
+            loss_sum_t += loss_t
+            loss_sum_c += loss_c
 
-            if batch_idx % 30 == 0:
-                print("mini Batch Loss: {}".format(loss.data[0]), "acc:", acc / (30 * batch_size))
+            if batch_idx % show_freq == 0:
+                loss_sum /= show_freq
+                loss_sum_t /= show_freq
+                loss_sum_c /= show_freq
+                print("mini Batch Loss: {0} loss _t:{1} loss_c:{2}".format
+                      (loss_sum.data[0], loss_sum_t.data[0], loss_sum_c.data[0]),
+                      "acc:", acc / (show_freq * batch_size * 3))
                 acc = 0
+                loss_sum = 0
+                loss_sum_t = 0
+                loss_sum_c = 0
 
         # Normalizing the loss by the total number of train batches
         running_loss /= len(trainloader)
@@ -190,59 +210,19 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
 
 
 def test(net, is_gpu):
-    net = TripletNet(resnet101())
-
-    # For training on GPU, we need to transfer net and data onto the GPU
-    # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
-
-
-    print('==> Retrieve model parameters ...')
-    checkpoint = torch.load("../checkpoint/checkpoint.pth.tar")
-    # start_epoch = checkpoint['epoch']
-    # best_prec1 = checkpoint['best_prec1']
-    net.load_state_dict(checkpoint['state_dict'])
 
     if is_gpu:
         net = torch.nn.DataParallel(net).cuda()
-        print('use gpu')
         cudnn.benchmark = True
 
-    """
-    training_images = []
-    for line in open("../triplets.txt"):
-        line_array = line.split(",")
-        if line_array[0] not in training_images:
-            training_images.append(line_array[0])
+    # net.load_state_dict(checkpoint['state_dict'])
+    sampler = Sampler()
 
-    """
-    train_path = os.path.join('../train_img')
-    training_images = os.listdir(train_path)
+    test_dir = '../test_dir2'
+    test_images = os.listdir(test_dir)
+    testloader = ImageLoader(batch_size=1, train_flag=False, img_list=test_images, base_dir=test_dir)
 
-    embedded_features_train = np.fromfile(
-        "../embedded_features_train.txt", dtype=np.float32)
-
-    neigh = KNeighborsClassifier(
-        n_neighbors=1, weights='distance', algorithm='kd_tree', n_jobs=-1)
-
-    reshape_feature = embedded_features_train.reshape(-1, 4096)
-    print(reshape_feature.shape)
-    neigh.fit(embedded_features_train.reshape(-1, 4096),
-              np.array(training_images))
-
-    transform_test = transforms.Compose([
-        transforms.Resize(224),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-            0.229, 0.224, 0.225])
-    ])
-    testset = TripletImageLoader(
-        base_path='', triplets_filename="", transform=transform_test, train=False, path='../test_dir')
-    testloader = torch.utils.data.DataLoader(
-        testset, batch_size=1, num_workers=32)
-    embedded_features_t = []
-
-    test_images = os.listdir('../test_dir')
+    net.eval()
     with torch.no_grad():
         for test_id, test_data in enumerate(testloader):
 
@@ -253,78 +233,127 @@ def test(net, is_gpu):
                 test_data = test_data.cuda()
             test_data = Variable(test_data)
 
-            embedded_test, _, _ = net(test_data, test_data, test_data)
+            embedded_test, _, _ , pred_cat, _, _= net(test_data, test_data, test_data)
+            # embedded_test = net.module.embeddingnet(test_data)
+            # print(embedded_test)
+            # print(net.module.sm(net.module.fc2(embedded_test)))
+            # predict_cat = get_predict(net.module.sm(net.module.fc2(embedded_test)))
+            predict_cat = get_predict(pred_cat)
             embedded_test_numpy = embedded_test.data.cpu().numpy()
 
-            embedded_features_t.append(embedded_test_numpy)
+            print(predict_cat)
+            dir_cat = sampler.get_dir(predict_cat.item())
+            kd_path = os.path.join(dir_cat, 'kd_tree.b')
+            f = open(kd_path, 'rb')
+            neigh = pickle.load(f)
+            pred_img = neigh.predict(embedded_test_numpy)
 
-        embedded_features_test = np.concatenate(embedded_features_t, axis=0)
-        pred_img = neigh.predict(embedded_features_test)
-        print(pred_img)
-        print(test_images)
+            print(pred_img)
+            print(test_images[test_id])
 
+
+def save_kd_tree(embedded_features, output_path, img_list):
+
+    neigh = KNeighborsClassifier(
+        n_neighbors=1, weights='distance', algorithm='kd_tree', n_jobs=-1)
+    reshape_feature = embedded_features.reshape(-1, 2048)
+    # print(reshape_feature.shape)
+    neigh.fit(reshape_feature,
+              np.array(img_list))
+
+    f = open(output_path, 'wb')
+    pickle.dump(neigh, f)
 
 
 def save_embedded_txt(is_gpu):
-
-    net = TripletNet(resnet101())
+    net = TripletNet(resnet50(True))
 
     # For training on GPU, we need to transfer net and data onto the GPU
     # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
-    dataroot = ""
-    trainloader, testloader = TinyImageNetLoader(dataroot,
-                                                 30,
-                                                 30)
+    if is_gpu:
+        net = torch.nn.DataParallel(net).cuda()
+        cudnn.benchmark = True
+    path_root = "/home/cc4192/data/data/vision/torralba/deeplearning/images256/"
+
     print('==> Retrieve model parameters ...')
     checkpoint = torch.load("../checkpoint/checkpoint.pth.tar")
     # start_epoch = checkpoint['epoch']
     # best_prec1 = checkpoint['best_prec1']
     net.load_state_dict(checkpoint['state_dict'])
 
-    if is_gpu:
-        net = torch.nn.DataParallel(net).cuda()
-        cudnn.benchmark = True
+    for direc in os.listdir(path_root):
+        dir_path1 = os.path.join(path_root, direc)
+        if not os.path.isdir(dir_path1):
+            continue
+        for dir2 in os.listdir(dir_path1):
+            dir_path2 = os.path.join(dir_path1, dir2)
+            print(dir_path2)
+            if not os.path.isdir(dir_path2):
+                continue
+            txt_path = os.path.join(dir_path2, 'embedded_features_train.txt')
+            embedded_list = None
 
-    embedded_list = []
-    path_root = os.path.join("..", "train_img")
+            cnt = 0
+            img_list = list_pictures(dir_path2)
+            testloader = ImageLoader(batch_size=16, train_flag=False, img_list=img_list)
+            flag = True
+            for _, data1 in enumerate(testloader):
+                if is_gpu:
+                    data1 = data1.cuda()
 
-    # for direc in os.listdir(path_root):
-    for _ in range(1):
+                    # wrap in torch.autograd.Variable
+                data1 = Variable(data1)
+                embedded_train = net.module.embeddingnet(data1)
+                embedded_feature = embedded_train.data.cpu().numpy()
+                # print(embedded_feature.shape)
+                if flag:
+                    flag = False
+                    embedded_list = embedded_feature
+                else:
+                    embedded_list = np.concatenate((embedded_feature, embedded_list))
+                cnt += 1
 
-        path = path_root
+            embedded_list = np.array(embedded_list)
+            print('list_shape:', embedded_list.shape)
+            # embedded_list.tofile(txt_path)
+            save_kd_tree(embedded_list, os.path.join(dir_path2, 'kd_tree.b'), img_list)
 
-        transform_train = transforms.Compose([
-            transforms.Resize(224),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-                0.229, 0.224, 0.225])
-        ])
 
-        trainset = TripletImageLoader(
-            base_path='', triplets_filename="../triplets.txt", train=False, transform=transform_train, path=path)
-        train_images = torch.utils.data.DataLoader(
-            trainset, batch_size=1, num_workers=32)
-        # train_images = os.listdir(path)
-        cnt = 0
+def load_model(resume):
+    net = TripletNet(resnet50(True))
+    # For training on GPU, we need to transfer net and data onto the GPU
+    # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
+    print('==> Retrieve model parameters ...')
+    if resume:
+        model_file = "../checkpoint/checkpoint.pth.tar"
+        # checkpoint = torch.load()
+        checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
+        state_dict = {str.replace(k, 'module.', ''): v for k, v in checkpoint['state_dict'].items()}
 
-        for _, data1 in enumerate(train_images):
-            if is_gpu:
-                data1 = data1.cuda()
+        net.load_state_dict(state_dict)
 
-                # wrap in torch.autograd.Variable
-            data1 = Variable(data1)
-            embedded_train1, _, _ = net(data1, data1, data1)
-            embedded_feature = embedded_train1.data.cpu().numpy()
-            print(embedded_feature.shape)
-            embedded_list.append(embedded_feature)
-            cnt += 1
-        embedded_list = np.array(embedded_list)
-    print(embedded_list.shape)
-    embedded_list.tofile(path_root + "/../embedded_features_train.txt")
+    return net
+
 
 if __name__ == '__main__':
-    net = TripletNet(resnet101())
+    import argparse
+    # net = TripletNet(resnet101())
     # test_image = scipy.misc.imread('../test_image.jpg')
-    test(net, False)
+    parser = argparse.ArgumentParser()
 
+    # directory
+    parser.add_argument('--ckptroot', type=str,
+                        default="../checkpoint", help='path to checkpoint')
+
+    parser.add_argument('--function', type=str, default='test')
+    args = parser.parse_args()
+
+    # net = load_model(False)
+    if args.function == 'test':
+        # test(net, True)
+        net = load_model(True)
+        test(net, True)
+    elif args.function == 'savekd':
+        save_embedded_txt(True)
+    else:
+        print('function not exist')
