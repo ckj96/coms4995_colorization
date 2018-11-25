@@ -209,6 +209,17 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
         shutil.copyfile(filename, directory + 'model_best.pth.tar')
 
 
+def save_to_txt(img_name, predicts):
+    txt_name = img_name.split('.')[0]
+    txt_name = txt_name + '.txt'
+    txt_path = os.path.join('../result', txt_name)
+    with open(txt_path, "w") as text_file:
+        for predict in predicts:
+            for img in predict:
+                text_file.write(img)
+                text_file.write('\n')
+
+
 def test(net, is_gpu):
 
     if is_gpu:
@@ -239,17 +250,29 @@ def test(net, is_gpu):
             # print(net.module.sm(net.module.fc2(embedded_test)))
             # predict_cat = get_predict(net.module.sm(net.module.fc2(embedded_test)))
             predict_cat = get_predict(pred_cat)
+            top_5_pred = pred_cat.topk(k=5, sorted=False)
             embedded_test_numpy = embedded_test.data.cpu().numpy()
 
-            print(predict_cat)
-            dir_cat = sampler.get_dir(predict_cat.item())
-            kd_path = os.path.join(dir_cat, 'kd_tree.b')
-            f = open(kd_path, 'rb')
-            neigh = pickle.load(f)
-            pred_img = neigh.predict(embedded_test_numpy)
+            recom_imgs = []
 
-            print('predict image', pred_img)
-            print('test image', test_images[test_id])
+            for pred in top_5_pred[1][0]:
+                print(pred)
+                dir_cat = sampler.get_dir(pred.item())
+                kd_path = os.path.join(dir_cat, 'kd_tree.b')
+                f = open(kd_path, 'rb')
+                neigh = pickle.load(f)
+                pred_imgs_id = neigh.kneighbors(embedded_test_numpy, return_distance=False)
+
+                pred_imgs = []
+                for id in pred_imgs_id:
+                    pred_imgs.append(neigh.classes_.take(id))
+                pred_imgs = np.array(pred_imgs)
+                print('pred imgs: ', pred_imgs.shape)
+                recom_imgs.append(pred_imgs[0])
+
+                # print('test image', test_images[test_id])
+
+            save_to_txt(test_images[test_id], recom_imgs)
 
 
 def save_kd_tree(embedded_features, output_path, img_list):
@@ -266,7 +289,6 @@ def save_kd_tree(embedded_features, output_path, img_list):
 
 
 def save_embedded_txt(net, is_gpu):
-
 
     # For training on GPU, we need to transfer net and data onto the GPU
     # http://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#training-on-gpu
