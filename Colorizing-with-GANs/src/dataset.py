@@ -1,7 +1,7 @@
 import glob
 import numpy as np
 import tensorflow as tf
-from scipy.misc import imread
+from scipy.misc import imread, imresize
 from abc import abstractmethod
 from .utils import unpickle
 
@@ -35,6 +35,7 @@ class BaseDataset():
         val = self.data[index]
         try:
             img = imread(val) if isinstance(val, str) else val
+            img = imresize(img, [256, 256, 3])
 
             if self.augment and np.random.binomial(1, 0.5) == 1:
                 img = img[:, ::-1, :]
@@ -55,7 +56,7 @@ class BaseDataset():
 
                 for ix in range(start, end):
                     item = self[ix]
-                    if item is not None:
+                    if item is not None and len(item.shape) == 3:
                         items.append(item)
 
                 start = end
@@ -117,9 +118,27 @@ class Places365Dataset(BaseDataset):
     def load(self):
         if self.training:
             data = np.array(
-                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
-
+                glob.glob('/home/cc4192/data/data/vision/torralba/deeplearning/images256/**/*.jpg', recursive=True))
+            print('training data shape:', data.shape)
         else:
-            data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
+            data = np.array(glob.glob('/home/cc4192/data/test_data/testSet_resize/*.jpg'))
+            print('test data shape:', data.shape)
+
+        return data
+
+
+class TestDataset(BaseDataset):
+    def __init__(self, path, training=True, augment=True):
+        super(TestDataset, self).__init__('test', path, training, augment)
+
+    def load(self):
+        if self.training:
+            data = np.array(
+                glob.glob('/home/cc4192/data/self/train/*.jpg', recursive=True))
+            print('training data shape:', data.shape)
+        else:
+            # data = np.array(glob.glob('/home/cc4192/data/self/test/*.jpg'))
+            data = np.array(glob.glob('data/test/*.*g'))
+            print('test data shape:', data.shape)
 
         return data

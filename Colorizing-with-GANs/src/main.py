@@ -3,8 +3,8 @@ import random
 import numpy as np
 import tensorflow as tf
 from .options import ModelOptions
-from .models import Cifar10Model, Places365Model
-from .dataset import CIFAR10_DATASET, PLACES365_DATASET
+from .models import Cifar10Model, Places365Model, SelfModel
+from .dataset import CIFAR10_DATASET, PLACES365_DATASET, TestDataset
 
 
 def main(options):
@@ -28,6 +28,9 @@ def main(options):
         elif options.dataset == PLACES365_DATASET:
             model = Places365Model(sess, options)
 
+        elif options.dataset == 'self':
+            model = SelfModel(sess, options)
+
         if not os.path.exists(options.checkpoints_path):
             os.makedirs(options.checkpoints_path)
 
@@ -39,9 +42,8 @@ def main(options):
         model.build()
         sess.run(tf.global_variables_initializer())
 
-
         # load model only after global variables initialization
-        model.load()
+        print('load status:', model.load())
 
 
         if options.mode == 0:
@@ -60,8 +62,16 @@ def main(options):
             while True:
                 model.sample()
 
-        else:
+        elif options.mode == 2:
             model.turing_test()
+
+        elif options.mode == 3:
+            model.test(False)
+
+
+
+        else:
+            raise('Not exist mode: ', options.mode)
 
 
 if __name__ == "__main__":

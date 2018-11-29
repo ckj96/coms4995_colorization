@@ -27,6 +27,28 @@ def stitch_images(grayscale, original, pred):
     return img
 
 
+def stitch_images_sep(grayscale, original, pred):
+    gap = 5
+    imgs = []
+
+    for ix, origin in enumerate(original):
+        width, height = original[0][:, :, 0].shape
+        img = Image.new('RGB', (width * 3, height ))
+
+        grayscale = np.array(grayscale).squeeze()
+        original = np.array(original)
+        pred = np.array(pred)
+
+        im1 = Image.fromarray(grayscale[ix])
+        im2 = Image.fromarray(original[ix])
+        im3 = Image.fromarray((pred[ix] * 255).astype(np.uint8))
+        img.paste(im1, (0, 0))
+        img.paste(im2, (0 + width, 0))
+        img.paste(im3, (0 + width + width, 0))
+        imgs.append(img)
+
+    return imgs
+
 def unpickle(file):
     with open(file, 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')

@@ -9,10 +9,10 @@ import tensorflow as tf
 from tensorflow import keras
 from abc import abstractmethod
 from .networks import Generator, Discriminator
-from .dataset import Places365Dataset, Cifar10Dataset
+from .dataset import Places365Dataset, Cifar10Dataset, TestDataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, turing_test, imshow, visualize
+from .utils import stitch_images, turing_test, imshow, visualize, stitch_images_sep
 
 
 class BaseModel:
@@ -30,6 +30,7 @@ class BaseModel:
         self.iteration = 0
         self.epoch = 0
         self.is_built = False
+
 
     def train(self):
         self.build()
@@ -232,7 +233,7 @@ class BaseModel:
 
     def save(self):
         print('saving model...\n')
-        self.saver.save(self.sess, os.path.join(self.options.checkpoints_path, 'CGAN_' + self.options.dataset), write_meta_graph=False)
+        self.saver.save(self.sess, os.path.join(self.options.checkpoints_path, 'CGAN_' + self.options.dataset + self.name), write_meta_graph=False)
 
     def eval_outputs(self, feed_dic):
         '''
@@ -251,6 +252,37 @@ class BaseModel:
         step = self.sess.run(self.global_step)
 
         return lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step
+
+    def test(self, show):
+        output_dir = './result'
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
+
+        # batch_size = self.options.batch_size
+        # gen = self.dataset_test.generator(batch_size, True)
+
+        self.build()
+
+        input_rgb = next(self.sample_generator)
+        feed_dic = {self.input_rgb: input_rgb}
+
+        step, rate = self.sess.run([self.global_step, self.learning_rate])
+        fake_image, input_gray = self.sess.run([self.sampler, self.input_gray], feed_dict=feed_dic)
+
+        fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space,
+                                 colorspace_out=COLORSPACE_RGB)
+        imgs = stitch_images_sep(input_gray, input_rgb, fake_image.eval())
+
+        sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
+
+        if show:
+            for img in imgs:
+                imshow(np.array(img), self.name)
+
+        else:
+            print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
+            for i, img in enumerate(imgs):
+                img.save(os.path.join(output_dir,  str(i)+ sample))
 
     @abstractmethod
     def create_generator(self):
@@ -347,6 +379,54 @@ class Places365Model(BaseModel):
 
     def create_dataset(self, training=True):
         return Places365Dataset(
+            path=self.options.dataset_path,
+            training=training,
+            augment=self.options.augment)
+
+
+class SelfModel(BaseModel):
+    def __init__(self, sess, options):
+        super(SelfModel, self).__init__(sess, options)
+
+    def create_generator(self):
+        kernels_gen_encoder = [
+            (64, 1, 0),     # [batch, 256, 256, ch] => [batch, 256, 256, 64]
+            (64, 2, 0),     # [batch, 256, 256, 64] => [batch, 128, 128, 64]
+            (128, 2, 0),    # [batch, 128, 128, 64] => [batch, 64, 64, 128]
+            (256, 2, 0),    # [batch, 64, 64, 128] => [batch, 32, 32, 256]
+            (512, 2, 0),    # [batch, 32, 32, 256] => [batch, 16, 16, 512]
+            (512, 2, 0),    # [batch, 16, 16, 512] => [batch, 8, 8, 512]
+            (512, 2, 0),    # [batch, 8, 8, 512] => [batch, 4, 4, 512]
+            (512, 2, 0)     # [batch, 4, 4, 512] => [batch, 2, 2, 512]
+        ]
+
+        kernels_gen_decoder = [
+            (512, 2, 0.5),  # [batch, 2, 2, 512] => [batch, 4, 4, 512]
+            (512, 2, 0.5),  # [batch, 4, 4, 512] => [batch, 8, 8, 512]
+            (512, 2, 0.5),  # [batch, 8, 8, 512] => [batch, 16, 16, 512]
+            (256, 2, 0),    # [batch, 16, 16, 512] => [batch, 32, 32, 256]
+            (128, 2, 0),    # [batch, 32, 32, 256] => [batch, 64, 64, 128]
+            (64, 2, 0),     # [batch, 64, 64, 128] => [batch, 128, 128, 64]
+            (64, 2, 0)      # [batch, 128, 128, 64] => [batch, 256, 256, 64]
+        ]
+
+        return Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
+
+    def create_discriminator(self):
+        kernels_dis = [
+            (64, 2, 0),     # [batch, 256, 256, ch] => [batch, 128, 128, 64]
+            (128, 2, 0),    # [batch, 128, 128, 64] => [batch, 64, 64, 128]
+            (256, 2, 0),    # [batch, 64, 64, 128] => [batch, 32, 32, 256]
+            (512, 2, 0),    # [batch, 32, 32, 256] => [batch, 16, 16, 512]
+            (512, 2, 0),    # [batch, 16, 16, 512] => [batch, 8, 8, 512]
+            (512, 2, 0),    # [batch, 8, 8, 512] => [batch, 4, 4, 512]
+            (512, 1, 0),    # [batch, 4, 4, 512] => [batch, 4, 4, 512]
+        ]
+
+        return Discriminator('dis', kernels_dis)
+
+    def create_dataset(self, training=True):
+        return TestDataset(
             path=self.options.dataset_path,
             training=training,
             augment=self.options.augment)
