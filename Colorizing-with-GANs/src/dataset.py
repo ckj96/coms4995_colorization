@@ -128,17 +128,18 @@ class Places365Dataset(BaseDataset):
 
 
 class TestDataset(BaseDataset):
-    def __init__(self, path, training=True, augment=True):
+    def __init__(self, path, training=True, augment=True, name=None):
         super(TestDataset, self).__init__('test', path, training, augment)
+        self.name = name
 
     def load(self):
         if self.training:
             data = np.array(
-                glob.glob('/home/cc4192/data/self/train/*.jpg', recursive=True))
+                glob.glob('/home/cc4192/recom_img/' + self.name + '/*.jpg', recursive=True))
             print('training data shape:', data.shape)
         else:
             # data = np.array(glob.glob('/home/cc4192/data/self/test/*.jpg'))
-            data = np.array(glob.glob('data/test/*.*g'))
+            data = np.array(glob.glob('/home/cc4192/coms4995_colorization/recommendation/test_dir2/*.*g'))
             print('test data shape:', data.shape)
 
         return data

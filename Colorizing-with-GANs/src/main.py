@@ -68,8 +68,6 @@ def main(options):
         elif options.mode == 3:
             model.test(False)
 
-
-
         else:
             raise('Not exist mode: ', options.mode)
 

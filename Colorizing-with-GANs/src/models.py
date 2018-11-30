@@ -36,7 +36,7 @@ class BaseModel:
         self.build()
 
         total = len(self.dataset_train)
-
+        self.sess.run(self.global_step.initializer)
         for epoch in range(self.options.epochs):
             lr_rate = self.sess.run(self.learning_rate)
 
@@ -89,7 +89,7 @@ class BaseModel:
 
                 # save model at checkpoints
                 if self.options.save and step % self.options.save_interval == 0:
-                    self.save()
+                    self.save(step)
 
             if self.options.validate:
                 self.evaluate()
@@ -201,7 +201,7 @@ class BaseModel:
 
         # learning rate decay
         if self.options.lr_decay_rate > 0:
-            self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
+            self.learning_rate = tf.maximum(1e-6, tf.train.exponential_decay(
                 learning_rate=self.options.lr,
                 global_step=self.global_step,
                 decay_steps=self.options.lr_decay_steps,
@@ -222,18 +222,21 @@ class BaseModel:
         self.saver = tf.train.Saver()
 
     def load(self):
-        ckpt = tf.train.get_checkpoint_state(self.options.checkpoints_path)
+        ckpt = tf.train.get_checkpoint_state(self.options.resume_checkpoint)
         if ckpt is not None:
             print('loading model...\n')
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(self.options.checkpoints_path, ckpt_name))
+            self.saver.restore(self.sess, os.path.join(self.options.resume_checkpoint, ckpt_name))
             return True
 
         return False
 
-    def save(self):
+    def save(self, step):
         print('saving model...\n')
-        self.saver.save(self.sess, os.path.join(self.options.checkpoints_path, 'CGAN_' + self.options.dataset + self.name), write_meta_graph=False)
+        directory =  os.path.join(self.options.checkpoints_path, self.name)
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
+        self.saver.save(self.sess, os.path.join(directory, str(step)), write_meta_graph=False)
 
     def eval_outputs(self, feed_dic):
         '''
@@ -429,4 +432,5 @@ class SelfModel(BaseModel):
         return TestDataset(
             path=self.options.dataset_path,
             training=training,
-            augment=self.options.augment)
+            augment=self.options.augment,
+            name=self.name)
