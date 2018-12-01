@@ -25,6 +25,7 @@ class ModelOptions:
         parser.add_argument('--dataset-path', type=str, default='./dataset', help='dataset path (default: ./dataset)')
         parser.add_argument('--checkpoints-path', type=str, default='./checkpoints', help='models are saved here '
                                                                                           '(default: ./checkpoints)')
+        parser.add_argument('--freeze', type=bool, default=False, help='freeze layers (default: False)')
         parser.add_argument('--resume_checkpoint', type=str, default=None, help='old models are saved here '
                                                                                           '(default:None)')
         parser.add_argument('--batch-size', type=int, default=16, metavar='N', help='input batch size for'
@@ -33,10 +34,10 @@ class ModelOptions:
                                                                            '(default: lab)')
         parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train '
                                                                                 '(default: 30)')
-        parser.add_argument('--lr', type=float, default=3e-4, metavar='LR', help='learning rate (default: 3e-4)')
+        parser.add_argument('--lr', type=float, default=3e-3, metavar='LR', help='learning rate (default: 3e-4)')
         parser.add_argument('--lr-decay-rate', type=float, default=0.1, help='learning rate exponentially '
                                                                              'decay rate (default: 0.1)')
-        parser.add_argument('--lr-decay-steps', type=float, default=5e5, help='learning rate exponentially '
+        parser.add_argument('--lr-decay-steps', type=float, default=5e3, help='learning rate exponentially '
                                                                               'decay steps (default: 5e5)')
         parser.add_argument('--beta1', type=float, default=0, help='momentum term of adam optimizer (default: 0)')
         parser.add_argument("--l1-weight", type=float, default=100.0, help="weight on L1 term for generator "

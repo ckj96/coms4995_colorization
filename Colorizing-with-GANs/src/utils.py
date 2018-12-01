@@ -49,6 +49,15 @@ def stitch_images_sep(grayscale, original, pred):
 
     return imgs
 
+
+def array2img(arrs):
+    imgs_ret = []
+    arrs = np.array(arrs)
+    for arr in arrs:
+        img = Image.fromarray((arr*255).astype(np.uint8))
+        imgs_ret.append(img)
+    return imgs_ret
+
 def unpickle(file):
     with open(file, 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')

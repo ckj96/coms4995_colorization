@@ -12,7 +12,7 @@ from .networks import Generator, Discriminator
 from .dataset import Places365Dataset, Cifar10Dataset, TestDataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, turing_test, imshow, visualize, stitch_images_sep
+from .utils import stitch_images, turing_test, imshow, visualize, stitch_images_sep, array2img
 
 
 class BaseModel:
@@ -37,6 +37,9 @@ class BaseModel:
 
         total = len(self.dataset_train)
         self.sess.run(self.global_step.initializer)
+        if self.options.freeze:
+            for var in self.var_list:
+                var.initializer.run()
         for epoch in range(self.options.epochs):
             lr_rate = self.sess.run(self.learning_rate)
 
@@ -133,6 +136,7 @@ class BaseModel:
         fake_image, input_gray = self.sess.run([self.sampler, self.input_gray], feed_dict=feed_dic)
         fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
         img = stitch_images(input_gray, input_rgb, fake_image.eval())
+        imgs = stitch_images_sep(input_gray, input_rgb, fake_image.eval())
 
         if not os.path.exists(self.samples_dir):
             os.makedirs(self.samples_dir)
@@ -207,6 +211,14 @@ class BaseModel:
                 decay_steps=self.options.lr_decay_steps,
                 decay_rate=self.options.lr_decay_rate))
 
+        if self.options.freeze:
+            gen_var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'gen/conv_last')
+            dis_var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'dis/conv_last')
+            self.var_list = gen_var_list + dis_var_list
+            gen_factory.var_list = gen_var_list
+            dis_factory.var_list = dis_var_list
+
+        # print(var_list)
         # generator optimizaer
         self.gen_train = tf.train.AdamOptimizer(
             learning_rate=self.learning_rate,
@@ -236,7 +248,7 @@ class BaseModel:
         directory =  os.path.join(self.options.checkpoints_path, self.name)
         if not os.path.isdir(directory):
             os.mkdir(directory)
-        self.saver.save(self.sess, os.path.join(directory, str(step)), write_meta_graph=False)
+        self.saver.save(self.sess, os.path.join(directory, 'save'), write_meta_graph=False)
 
     def eval_outputs(self, feed_dic):
         '''
@@ -274,7 +286,8 @@ class BaseModel:
 
         fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space,
                                  colorspace_out=COLORSPACE_RGB)
-        imgs = stitch_images_sep(input_gray, input_rgb, fake_image.eval())
+        # imgs = stitch_images_sep(input_gray, input_rgb, fake_image.eval())
+        imgs = array2img(fake_image.eval())
 
         sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
