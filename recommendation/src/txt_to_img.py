@@ -25,7 +25,7 @@ def save_single(txt_path, output_path):
 def save_mul(dir_path, output_path):
     for file_name in os.listdir(dir_path):
         file_path = os.path.join(dir_path, file_name)
-
+        print(file_path)
         save_single(file_path, output_path)
 
 
