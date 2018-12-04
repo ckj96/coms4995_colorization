@@ -2,8 +2,10 @@
 
 Our project focuses on automatic colorization for gray images. 
 
-We have experimented two methods: example-based method and fully end-to-end method. 
+We experimented different methods and made comparisons among them. 
 
-For the example-based method, we aim to create a network that gives reference on any gray image and perform automatic colorization based on the reference. 
+We used end-to-end method based on CNN architecture, for which we experimented two different specific architectures. 
 
-For the end-to-end method, the goal is to achieve fully automatic colorization on gray image of any resolution, without any pre-processing or post-processing requirement.
+At the same time we also explored end-to-end method based on GAN. 
+
+Furthermore, we used our recommendation system to recommend similar images for any given image, and retrained the GAN model using the recommended references.
